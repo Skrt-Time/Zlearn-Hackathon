@@ -1,10 +1,6 @@
 // src/pages/Inscription.tsx
 
-<<<<<<< HEAD
 import React, { useState, useEffect } from "react";
-=======
-import { useState, useEffect} from "react";
->>>>>>> origin/deb_t
 import { useNavigate } from "react-router-dom";
 import { useWallet } from "@demox-labs/aleo-wallet-adapter-react";
 import {
@@ -14,19 +10,10 @@ import {
 import { supabase } from "../lib/supabase";
 import { Transaction } from "@demox-labs/aleo-wallet-adapter-base";
 
-<<<<<<< HEAD
 import GradientBackground from "./css/GradientBackground";
-import "./css/Account.css";
-import { IoArrowBackOutline } from "react-icons/io5";
-=======
-import GradientBackground from './css/GradientBackground';
-import './css/Account.css';
-import {IoArrowBackOutline } from 'react-icons/io5';
->>>>>>> origin/deb_t
+import "./css/Inscription.css";
 
 /** ───────────── Helpers Web Crypto ───────────── */
-
-/** Transforme Base64 → ArrayBuffer */
 function base64ToArrayBuffer(base64: string): ArrayBuffer {
   const binary = window.atob(base64);
   const bytes = new Uint8Array(binary.length);
@@ -36,7 +23,6 @@ function base64ToArrayBuffer(base64: string): ArrayBuffer {
   return bytes.buffer;
 }
 
-/** Import CryptoKey AES-GCM 256 bits */
 async function importAesKeyFromRaw(rawKeyBuffer: ArrayBuffer): Promise<CryptoKey> {
   return await window.crypto.subtle.importKey(
     "raw",
@@ -47,7 +33,6 @@ async function importAesKeyFromRaw(rawKeyBuffer: ArrayBuffer): Promise<CryptoKey
   );
 }
 
-/** Déchiffre AES-GCM(IV∥ciphertext) encodé en Base64 → string JSON */
 async function decryptAesGcmFromBase64(
   ciphertextBase64: string,
   aesKey: CryptoKey
@@ -66,7 +51,6 @@ async function decryptAesGcmFromBase64(
   return new TextDecoder().decode(plaintextBuffer);
 }
 
-/** Extrait la partie numérique d’un doc_id comme "12345field.private" → 12345n */
 function extractNumericDocId(docId: string): bigint {
   const match = /^(\d+)/.exec(docId);
   if (!match) return 0n;
@@ -77,10 +61,9 @@ function extractNumericDocId(docId: string): bigint {
   }
 }
 
-/** Trie un tableau de records par data.doc_id (numérique) décroissant */
-function sortRecordsByNumericDocIdDesc<T extends { data: { doc_id: string } }>(
-  records: T[]
-): T[] {
+function sortRecordsByNumericDocIdDesc<
+  T extends { data: { doc_id: string; reader: string } }
+>(records: T[]): T[] {
   return [...records].sort((a, b) => {
     const numA = extractNumericDocId(a.data.doc_id);
     const numB = extractNumericDocId(b.data.doc_id);
@@ -90,32 +73,36 @@ function sortRecordsByNumericDocIdDesc<T extends { data: { doc_id: string } }>(
   });
 }
 
-/** ───────────── Composant Inscription ───────────── */
+interface TokenRow {
+  rawDocId: string;   // ex. "12345field.private"
+  pureDocId: string;  // ex. "12345"
+  reader: string;     // ex. "aleo1..." sans ".private"
+  valide: boolean;    // depuis Supabase
+}
+
 export default function Inscription() {
   const { publicKey, connected, requestRecords, requestTransaction } = useWallet();
-  const [docIdWithSuffix, setDocIdWithSuffix] = useState<string>("");
+  const [tokenRows, setTokenRows] = useState<TokenRow[]>([]);
+  const [selectedToken, setSelectedToken] = useState<string>(""); // pureDocId
+  const [hedgeAddress, setHedgeAddress] = useState<string>("");
+  const [numberInput, setNumberInput] = useState<number>(0);
   const [txStatus, setTxStatus] = useState<string>("");
-  const [recipient, setRecipient] = useState<string>("");
-  const [args1, setArgs1] = useState<string>("");
-  const [args2, setArgs2] = useState<string>("");
+
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!connected) {
-      navigate("/"); // renvoie à l'accueil si le wallet n'est pas connecté
+      console.log("🔒 Wallet non connecté, redirection.");
+      navigate("/");
+    } else {
+      console.log("✅ Wallet connecté :", publicKey?.toString());
     }
-  }, [connected, navigate]);
+  }, [connected, navigate, publicKey]);
 
-  /**
-   * 1. Récupère les records du programme Aleo,
-   * 2. Trie décroissant par data.doc_id numérique,
-   * 3. Déchiffre le JSON du premier record,
-   * 4. Télécharge directement ce JSON.
-   */
-  const askRecords = async () => {
+  const loadTokens = async () => {
     if (!publicKey) {
       alert("Veuillez connecter votre wallet Aleo.");
-      throw new WalletNotConnectedError();
+      return;
     }
     if (!requestRecords) {
       console.error("La fonction requestRecords n'est pas disponible.");
@@ -124,176 +111,180 @@ export default function Inscription() {
 
     try {
       const program = "permission_granthack.aleo";
-
-      // 1) Récupérer tous les records
       const records = await requestRecords(program);
-      console.log("Records bruts :", records);
+      console.log("📥 Records bruts :", records);
 
       if (!records || records.length === 0) {
         alert("Aucun token trouvé pour ce programme.");
+        setTokenRows([]);
         return;
       }
 
-      // 2) Trier décroissant par data.doc_id
       const triDesc = sortRecordsByNumericDocIdDesc(records as any);
-      console.log("Records triés (décroissant) :", triDesc);
+      console.log("📑 Records triés (décroissant) :", triDesc);
 
-      // 3) Prendre le premier doc_id
-      const firstDocId = triDesc[0]?.data?.doc_id ?? "";
-      if (!firstDocId) {
-        alert("Impossible de récupérer le dernier token.");
-        return;
-      }
-      console.log("Premier doc_id après tri :", firstDocId);
-      setDocIdWithSuffix(firstDocId);
+      const rows: TokenRow[] = [];
+      for (const rec of triDesc) {
+        const rawDocId: string = rec.data.doc_id;
+        const pureDocId = rawDocId.endsWith("field.private")
+          ? rawDocId.replace(/field\.private$/, "")
+          : rawDocId;
 
-      // 4) Déchiffrer et retourner l'objet JSON
-      const decryptedObj = await handleRecord(firstDocId);
-      if (decryptedObj) {
-        // 5) Créer un Blob et déclencher le téléchargement automatique
-        const jsonString = JSON.stringify(decryptedObj, null, 2);
-        const blob = new Blob([jsonString], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `token-${firstDocId.replace(/field\.private$/, "")}.json`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        let readerRaw: string = rec.data.reader || "";
+        if (readerRaw.endsWith(".private")) {
+          readerRaw = readerRaw.replace(/\.private$/, "");
+        }
+
+        const { data: infoRow, error: fetchError } = await supabase
+          .from("information")
+          .select("valide")
+          .eq("id", Number(pureDocId))
+          .maybeSingle();
+
+        console.log(
+          `🔍 Supabase info pour id=${pureDocId} → `,
+          { infoRow, fetchError }
+        );
+
+        let valide = false;
+        if (!fetchError && infoRow) {
+          valide = infoRow.valide === true;
+        }
+
+        rows.push({ rawDocId, pureDocId, reader: readerRaw, valide });
       }
+
+      console.log("✅ tokenRows finaux :", rows);
+      setTokenRows(rows);
+
+      const firstValid = rows.find((r) => r.valide);
+      setSelectedToken(firstValid ? firstValid.pureDocId : "");
     } catch (err) {
-      console.error("Erreur durant askRecords :", err);
-      alert("Une erreur est survenue lors de la récupération du token.");
+      console.error("❌ Erreur lors du chargement des tokens :", err);
+      alert("Erreur lors du chargement des tokens.");
+      setTokenRows([]);
     }
   };
 
-  /**
-   * Récupère la ligne Supabase pour docIdWithSuffix,
-   * déchiffre fichier_crypt avec cle_crypte, retourne l’objet JSON.
-   * Téléchargement possible même si `valide === true`.
-   */
-  const handleRecord = async (docIdWithSuffix: string): Promise<object | null> => {
+  const decryptTokenJSON = async (rawDocId: string): Promise<object | null> => {
     try {
-      // Supprime "field.private" si présent
-      let pureIdStr = docIdWithSuffix;
+      let pureIdStr = rawDocId;
       if (pureIdStr.endsWith("field.private")) {
         pureIdStr = pureIdStr.replace(/field\.private$/, "");
       }
-      console.log("ID sans suffixe (SELECT) :", pureIdStr);
 
-      // Récupérer la ligne Supabase
       const { data: infoRow, error: fetchError } = await supabase
         .from("information")
-        .select("fichier_crypt, cle_crypte, valide")
-        .eq("id", pureIdStr)
+        .select("fichier_crypt, cle_crypte")
+        .eq("id", Number(pureIdStr))
         .maybeSingle();
 
-      console.log("Clés récupérées :", infoRow);
-      if (fetchError) {
-        console.error("Erreur Supabase (fetch ligne) :", fetchError.message);
-        return null;
-      }
-      if (!infoRow) {
-        console.warn(`Aucune entrée "information" pour id=${pureIdStr}`);
-        return null;
-      }
+      console.log(
+        `🔍 Supabase fetch fichier_crypt/cle_crypte pour id=${pureIdStr} → `,
+        { infoRow, fetchError }
+      );
 
-      const { fichier_crypt, cle_crypte, valide } = infoRow;
-      if (!fichier_crypt || !cle_crypte) {
-        console.warn("Champs cryptés manquants.");
+      if (fetchError || !infoRow || !infoRow.fichier_crypt || !infoRow.cle_crypte) {
+        alert("Impossible de lire ou déchiffrer l'enregistrement en base.");
         return null;
       }
 
-      // Note : même si valide === true, on poursuit pour permettre le téléchargement
-      if (valide) {
-        console.log("Le token est déjà validé, mais le JSON sera tout de même téléchargé.");
-      }
-
-      // Importer la clé AES
-      const rawKeyBuffer = base64ToArrayBuffer(cle_crypte);
+      const rawKeyBuffer = base64ToArrayBuffer(infoRow.cle_crypte);
       const aesKey = await importAesKeyFromRaw(rawKeyBuffer);
+      const jsonString = await decryptAesGcmFromBase64(
+        infoRow.fichier_crypt,
+        aesKey
+      );
 
-      // Déchiffrer le JSON
-      const jsonString = await decryptAesGcmFromBase64(fichier_crypt, aesKey);
-
-      let jsonObj;
       try {
-        jsonObj = JSON.parse(jsonString);
+        return JSON.parse(jsonString);
       } catch (e) {
-        console.error("Le texte déchiffré n’est pas un JSON valide :", e);
-        alert("Le contenu déchiffré n’est pas un JSON valide.");
+        console.error("❌ JSON invalide :", e);
+        alert("Le contenu déchiffré n'est pas un JSON valide.");
         return null;
       }
-
-      console.log("JSON déchiffré pour doc_id =", docIdWithSuffix, ":", jsonObj);
-      return jsonObj;
     } catch (err) {
-      console.error("Erreur dans handleRecord :", err);
+      console.error("❌ Erreur dans decryptTokenJSON :", err);
       alert("Erreur lors du déchiffrement.");
       return null;
     }
   };
 
-  /**
-   * Met à jour `valide = true` dans Supabase, si besoin.
-   */
-  const handleValidate = async () => {
-    if (!docIdWithSuffix) {
-      alert("Aucun doc_id défini. Cliquez d'abord sur 'Request Records'.");
-      return;
-    }
+  const downloadToken = async (rawDocId: string) => {
+    const decryptedObj = await decryptTokenJSON(rawDocId);
+    if (!decryptedObj) return;
 
-    let pureIdStr = docIdWithSuffix;
-    if (pureIdStr.endsWith("field.private")) {
-      pureIdStr = pureIdStr.replace(/field\.private$/, "");
-    }
-    console.log("ID sans suffixe (UPDATE) :", pureIdStr);
+    const pureIdStr = rawDocId.endsWith("field.private")
+      ? rawDocId.replace(/field\.private$/, "")
+      : rawDocId;
+    const jsonString = JSON.stringify(decryptedObj, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `token-${pureIdStr}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
-    // Vérifier `valide`
+  const validateRow = async (rawDocId: string) => {
+    const pureIdStr = rawDocId.endsWith("field.private")
+      ? rawDocId.replace(/field\.private$/, "")
+      : rawDocId;
+
     const { data: existingRow, error: fetchError } = await supabase
       .from("information")
       .select("valide")
-      .eq("id", pureIdStr)
+      .eq("id", Number(pureIdStr))
       .maybeSingle();
 
-    if (fetchError) {
-      console.error("Erreur Supabase (fetch pour validate) :", fetchError.message);
-      alert("Erreur lors de la vérification en base.");
-      return;
-    }
-    if (!existingRow) {
-      alert(`Aucune entrée "information" pour id=${pureIdStr}`);
-      return;
-    }
+    console.log(
+      `🔍 Supabase fetch 'valide' pour id=${pureIdStr} → `,
+      { existingRow, fetchError }
+    );
 
+    if (fetchError || !existingRow) {
+      alert(`Impossible de vérifier l’état en base pour id = ${pureIdStr}.`);
+      return;
+    }
     if (existingRow.valide) {
-      alert("Information déjà validée");
+      alert("Ce token est déjà validé.");
       return;
     }
 
-    // Mettre à jour `valide`
     const { error: updateError } = await supabase
       .from("information")
       .update({ valide: true })
-      .eq("id", pureIdStr);
+      .eq("id", Number(pureIdStr));
 
     if (updateError) {
-      console.error("Erreur Supabase (validation) :", updateError.message);
+      console.error("❌ Erreur Supabase (validation) :", updateError.message);
       alert("Erreur lors de la validation en base : " + updateError.message);
       return;
     }
 
-    alert("Ce record a été validé avec succès !");
+    alert("Le token a été validé avec succès !");
+    await loadTokens();
   };
 
-  /**
-   * Effectue une transaction Aleo “share_results.aleo::calcul_event”
-   */
   const handleShareResult = async () => {
     if (!publicKey) {
       setTxStatus("Wallet non connecté");
       throw new WalletNotConnectedError();
+    }
+    if (!selectedToken) {
+      alert("Veuillez sélectionner un token validé dans la liste.");
+      return;
+    }
+    if (!hedgeAddress) {
+      alert("Veuillez saisir l’adresse du hedge fund.");
+      return;
+    }
+    if (numberInput <= 0) {
+      alert("Veuillez saisir un nombre valide.");
+      return;
     }
 
     const fee = 50_000;
@@ -302,7 +293,7 @@ export default function Inscription() {
       WalletAdapterNetwork.TestnetBeta,
       "share_results.aleo",
       "calcul_event",
-      [args1, args2, recipient, publicKey.toString()],
+      [selectedToken, numberInput.toString(), hedgeAddress, publicKey.toString()],
       fee,
       false
     );
@@ -314,8 +305,8 @@ export default function Inscription() {
 
     setTxStatus("Envoi de la transaction en cours…");
     const result = await requestTransaction(tx);
-    console.log("Résultat transaction :", result);
-    setTxStatus("✅ Permission envoyée !");
+    console.log("✅ Résultat transaction :", result);
+    setTxStatus("✅ Transaction envoyée !");
   };
 
   const handleBack = () => {
@@ -324,50 +315,116 @@ export default function Inscription() {
 
   return (
     <div className="account-page">
-      <div className="container">
-        <GradientBackground />
-        <button className="back-button" onClick={handleBack}>
-          <IoArrowBackOutline size={24} />
+      <GradientBackground />
+
+      {/* ─────────── HEADER ─────────── */}
+      <header className="insc-header">
+        <button className="btn-request" onClick={loadTokens} disabled={!publicKey}>
+          Request Records
         </button>
+        <button className="btn-home" onClick={handleBack}>
+          Home
+        </button>
+      </header>
 
-        <div className="content">
-          <button className="valid" onClick={askRecords} disabled={!publicKey}>
-            Request Records et Déchiffrer
+      {/* ─────────── TABLEAU DES TOKENS (toujours affiché) ─────────── */}
+      <main className="insc-main">
+        <table className="token-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Company Address</th>
+              <th>Valide</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tokenRows.length === 0 ? (
+              <tr>
+                <td colSpan={3} style={{ textAlign: "center", padding: "12px" }}>
+                  Aucun token chargé
+                </td>
+              </tr>
+            ) : (
+              tokenRows.map((row) => (
+                <tr key={row.rawDocId}>
+                  <td
+                    className="clickable-cell"
+                    onClick={() => downloadToken(row.rawDocId)}
+                  >
+                    {row.pureDocId}
+                  </td>
+                  <td
+                    className="clickable-cell"
+                    onClick={() => downloadToken(row.rawDocId)}
+                  >
+                    {row.reader}
+                  </td>
+                  <td>
+                    {row.valide ? (
+                      <span>Ce token est déjà validé</span>
+                    ) : (
+                      <button
+                        className="btn-validate-row"
+                        onClick={() => validateRow(row.rawDocId)}
+                      >
+                        Valider
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </main>
+
+      {/* ─────────── FORMULAIRE SHARE (quand au moins un token est validé) ─────────── */}
+      {tokenRows.some((r) => r.valide) && (
+        <section className="insc-form">
+          <h3>Envoyer au Hedge Fund</h3>
+          <div className="form-group">
+            <label htmlFor="tokenSelect">Token validés :</label>
+            <select
+              id="tokenSelect"
+              value={selectedToken}
+              onChange={(e) => setSelectedToken(e.target.value)}
+            >
+              <option value="">Choisir...</option>
+              {tokenRows
+                .filter((r) => r.valide)
+                .map((r) => (
+                  <option key={r.pureDocId} value={r.pureDocId}>
+                    {r.pureDocId}
+                  </option>
+                ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label htmlFor="hedgeAddress">Adresse Hedge Fund&nbsp;:</label>
+            <input
+              id="hedgeAddress"
+              type="text"
+              placeholder="aleo1..."
+              value={hedgeAddress}
+              onChange={(e) => setHedgeAddress(e.target.value)}
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="numberInput">Nombre&nbsp;:</label>
+            <input
+              id="numberInput"
+              type="number"
+              min={1}
+              value={numberInput}
+              onChange={(e) => setNumberInput(Number(e.target.value))}
+            />
+          </div>
+          <button className="btn-share" onClick={handleShareResult} disabled={!publicKey}>
+            Share
           </button>
-          <button
-            className="valid"
-            onClick={handleValidate}
-            disabled={!publicKey || !docIdWithSuffix}
-          >
-            Validate The Data
-          </button>
-
-          <input
-            className="inputform"
-            placeholder="Adresse du hedge_funds"
-            value={recipient}
-            onChange={(e) => setRecipient(e.target.value)}
-          />
-          <input
-            className="inputform"
-            placeholder="args1"
-            value={args1}
-            onChange={(e) => setArgs1(e.target.value)}
-          />
-          <input
-            className="inputform"
-            placeholder="args2"
-            value={args2}
-            onChange={(e) => setArgs2(e.target.value)}
-          />
-
-          <button className="valid" onClick={handleShareResult}>
-            Sharedata
-          </button>
-
           {txStatus && <p className="tx-status">{txStatus}</p>}
-        </div>
-      </div>
+        </section>
+      )}
     </div>
   );
 }

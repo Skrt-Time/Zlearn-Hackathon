@@ -1,92 +1,230 @@
-.inscription-container {
-  position: relative;
-  height: 100vh;
+/* src/css/Inscription.css */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   1. RESET / BASE
+   ───────────────────────────────────────────────────────────────────────────── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  overflow-x: hidden;
+  font-family: 'Poppins', sans-serif;
+  background: #0a0a0a;
+  color: #f4f4f4;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   2. STRUCTURE GÉNÉRALE
+   ───────────────────────────────────────────────────────────────────────────── */
+.account-page {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #000;
-  overflow: hidden;
-  font-family: sans-serif;
+  flex-direction: column;
+  min-height: 100vh;
+  position: relative;
 }
 
-.inscription-gradient-layer1,
-.inscription-gradient-layer2 {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 0;
-}
-
-.inscription-gradient-layer1 {
-  background: linear-gradient(135deg, #1F3B73, #2C5364, #0F2027);
-}
-
-.inscription-gradient-layer2 {
-  background: linear-gradient(135deg, #0F2027, #1F3B73, #2C5364);
-  opacity: 0;
-  transition: opacity 4s ease-in-out;
-}
-
-.inscription-content {
+.container {
+  position: relative;
+  flex: 1;
   z-index: 1;
-  text-align: center;
-  padding: 20px;
-  color: #fff;
 }
 
-.inscription-logo {
-  width: 120px;
-  height: 120px;
-  margin-bottom: 30px;
-  object-fit: contain;
-  border-radius: 10px;
-  background-color: #fff;
-}
-
-.inscription-title {
-  font-size: 26px;
-  font-weight: bold;
-  margin-bottom: 20px;
-}
-
-.inscription-input {
-  width: 100%;
-  max-width: 400px;
-  padding: 12px;
-  margin-bottom: 15px;
-  border-radius: 8px;
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid #ccc;
-  color: #fff;
-  outline: none;
-}
-
-.inscription-button {
-  background-color: #e29834;
-  padding: 12px 40px;
-  border: none;
-  border-radius: 25px;
-  margin-top: 10px;
-  color: #fff;
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow: 1px 2px 3px rgba(0, 0, 0, 0.3);
-}
-
-.back-button {
-  position: absolute;
-  top: 20px;
-  background-color: #e29834;
-  color: #fff;
-  border: none;
-  border-radius: 25px;
-  padding: 10px;
-  cursor: pointer;
+/* ─────────────────────────────────────────────────────────────────────────────
+   3. HEADER
+   ───────────────────────────────────────────────────────────────────────────── */
+.insc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(6px);
   z-index: 2;
-  box-shadow: 1px 2px 3px rgba(0, 0, 0, 0.3);
 }
-.back-button {
-  left: 20px;
+
+.btn-request,
+.btn-home {
+  padding: 10px 18px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #74b9ff, #61a5c2);
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-request:hover,
+.btn-home:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(97, 165, 194, 0.4);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   4. TABLEAU DES TOKENS (Modifications importantes pour garantir la visibilité)
+   ───────────────────────────────────────────────────────────────────────────── */
+.insc-main {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+
+  /* AJOUTS ESSENTIELS POUR LA VISIBILITÉ */
+  position: relative;
+  z-index: 9999;
+}
+
+.token-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.token-table th,
+.token-table td {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 0.9rem;
+  color: #e0f7ff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.token-table th {
+  background: rgba(97, 165, 194, 0.2);
+}
+
+.token-table tr:last-child td {
+  border-bottom: none;
+}
+
+.clickable-cell {
+  cursor: pointer;
+  color: #74b9ff;
+  transition: color 0.2s ease;
+}
+
+.clickable-cell:hover {
+  color: #a8d0e6;
+}
+
+.btn-validate-row {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #fff;
+  background: #3cb371;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn-validate-row:hover {
+  background: #2e8b57;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   5. FORMULAIRE SHARE
+   ───────────────────────────────────────────────────────────────────────────── */
+.insc-form {
+  background: rgba(0, 0, 0, 0.7);
+  padding: 24px;
+  backdrop-filter: blur(6px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  z-index: 2;
+  position: relative;
+}
+
+.insc-form h3 {
+  font-size: 1.2rem;
+  color: #e0f7ff;
+  text-align: center;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+  color: #c0eaff;
+}
+
+.form-group input,
+.form-group select {
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  border: 1px solid rgba(224, 247, 255, 0.3);
+  border-radius: 6px;
+  background: #ffffff;
+  color: #000000;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #74b9ff;
+}
+
+.btn-share {
+  align-self: flex-start;
+  padding: 10px 18px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  background: #ff8c00;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.btn-share:hover {
+  transform: translateY(-2px);
+  background: #e07b00;
+}
+
+.tx-status {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #a8d0e6;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   6. RESPONSIVE
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 800px) {
+  .insc-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .token-table th,
+  .token-table td {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+  }
+
+  .insc-form {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .btn-request,
+  .btn-home,
+  .btn-share {
+    font-size: 0.8rem;
+    padding: 8px 14px;
+  }
 }

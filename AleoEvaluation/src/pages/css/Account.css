@@ -1,101 +1,204 @@
-.account-page {
+/* src/css/Account.css */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   1. RESET / BASE
+   ───────────────────────────────────────────────────────────────────────────── */
+* {
   margin: 0;
-  height: 100vh;
-  background: #000;
-  font-family: sans-serif;
-  overflow: hidden;
-  position: relative;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-.account-page .container {
-  position: relative;
+html,
+body {
   height: 100%;
-  width: 100%;
+  overflow-x: hidden;
+  font-family: 'Poppins', sans-serif;
+  background: #0a0a0a;
+  color: #f4f4f4;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   2. STRUCTURE GÉNÉRALE
+   ───────────────────────────────────────────────────────────────────────────── */
+.account-page {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  min-height: 100vh;
 }
 
-.account-page .gradient-layer1,
-.account-page .gradient-layer2 {
+.container {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   3. ARRIÈRE-PLAN ANIMÉ
+   ───────────────────────────────────────────────────────────────────────────── */
+/* Le composant <GradientBackground /> siège dans la container */
+.container > .gradient {
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
+  width: 100%;
+  height: 100%;
   z-index: 0;
 }
 
-.account-page .gradient-layer1 {
-  background: linear-gradient(135deg, #1f3b73, #2c5364, #0f2027);
+/* ─────────────────────────────────────────────────────────────────────────────
+   4. BOUTON “RETOUR”
+   ───────────────────────────────────────────────────────────────────────────── */
+.back-button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: linear-gradient(135deg, #74b9ff, #61a5c2);
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  z-index: 2;
 }
 
-.account-page .gradient-layer2 {
-  background: linear-gradient(135deg, #0f2027, #1f3b73, #2c5364);
-  opacity: 0;
-  transition: opacity 4s ease-in-out;
+.back-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(97, 165, 194, 0.4);
 }
 
-.account-page .content {
+/* ─────────────────────────────────────────────────────────────────────────────
+   5. ZONE “CONTENT”
+   ───────────────────────────────────────────────────────────────────────────── */
+.content {
+  position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  padding: 2rem;
-  background-color: rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
-  border: 1px solid #ffffff33;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-  max-width: 400px;
-  width: 100%;
-}
- .logout-button .back-button {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background-color: #e29834;
-  color: #fff;
-  border: none;
-  border-radius: 25px;
-  padding: 10px;
-  cursor: pointer;
-  z-index: 2;
-  box-shadow: 1px 2px 3px rgba(0, 0, 0, 0.3);
+  align-items: center;
+  gap: 24px;
+  padding: 80px 24px 24px;
+  animation: fadeIn 0.8s ease forwards;
 }
 
-.account-page .inputform {
-  padding: 12px;
-  font-size: 16px;
-  border: 1px solid #ffffff66;
+/* ─────────────────────────────────────────────────────────────────────────────
+   6. INPUTS ET BOUTONS
+   ───────────────────────────────────────────────────────────────────────────── */
+/* Champ de saisie */
+.inputform {
+  width: 100%;
+  max-width: 360px;
+  padding: 12px 16px;
+  font-size: 0.9rem;
+  border: 1px solid rgba(224, 247, 255, 0.3);
   border-radius: 8px;
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background: #ffffff;
+  color: #000000;
+  transition: border-color 0.2s ease;
+}
+
+.inputform:focus {
   outline: none;
-  transition: background-color 0.2s ease;
+  border-color: #74b9ff;
 }
 
-.account-page .inputform::placeholder {
-  color: #cccccc;
-}
-
-.account-page .inputform:focus {
-  background-color: rgba(255, 255, 255, 0.2);
-}
-
-.account-page .valid {
+/* Boutons “valid” */
+.valid {
   width: 100%;
-  padding: 12px;
-  background-color: rgba(255, 255, 255, 0.15);
-  border: 1px solid #ffffff66;
-  border-radius: 12px;
-  color: #ffffff;
-  font-size: 16px;
-  font-weight: bold;
+  max-width: 360px;
+  padding: 14px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #74b9ff, #61a5c2);
+  border: none;
+  border-radius: 24px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.account-page .valid:hover {
-  background-color: rgba(255, 255, 255, 0.3);
+.valid:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(97, 165, 194, 0.4);
+}
+
+/* Zone de dépôt de fichier */
+.drop-label {
+  width: 100%;
+  max-width: 360px;
+  padding: 20px;
+  text-align: center;
+  border: 2px dashed rgba(224, 247, 255, 0.3);
+  border-radius: 12px;
+  color: #c0eaff;
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.drop-label:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #74b9ff;
+}
+
+/* Statut transaction */
+.tx-status {
+  font-size: 0.85rem;
+  color: #a8d0e6;
+  margin-top: 8px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   7. FOOTER (OPTIONNEL)
+   ───────────────────────────────────────────────────────────────────────────── */
+.footer {
+  margin-top: auto;
+  padding: 16px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(6px);
+  color: #c0eaff;
+  font-size: 0.85rem;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   8. ANIMATIONS GÉNÉRALES
+   ───────────────────────────────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   9. RESPONSIVE
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .content {
+    padding: 60px 16px 16px;
+    gap: 16px;
+  }
+
+  .inputform,
+  .valid,
+  .drop-label {
+    max-width: 100%;
+    font-size: 0.9rem;
+  }
+
+  .back-button {
+    width: 40px;
+    height: 40px;
+  }
 }
