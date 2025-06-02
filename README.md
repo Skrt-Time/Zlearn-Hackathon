@@ -36,9 +36,9 @@ Welcome to **Covenant Project**. Our application delivers a blockchain-native Sa
 ## Goals of the App
 
 - **Three user roles**:  
-  1. **Company**: Creates a single company and uploads an encrypted JSON of its financial data.  
+  1. **Company**(Startup): Creates a single company and uploads an encrypted JSON of its financial data.  
   2. **Validator**: Downloads and validates the encrypted JSON, then forwards evaluation results to the Bank.  
-  3. **Bank (Evaluator)**: Receives the evaluation as a zero-knowledge proof, verifies the covenant ratio without ever seeing raw data.  
+  3. **Bank (Evaluator/Hedge fund)**: Receives the evaluation as a zero-knowledge proof, verifies the covenant ratio without ever seeing raw data.  
 
 - **Minimal demo features**:  
   - A Company can create a company profile and upload an encrypted JSON file.  
@@ -71,40 +71,11 @@ Welcome to **Covenant Project**. Our application delivers a blockchain-native Sa
 
 ## Database Schema
 
-The SQL definition for the Supabase database is stored in `bd.sql`. It includes three tables: `Users`, `Company`, and `Information`. An example schema:
+The SQL definition for the Supabase database is stored in `bd.sql`. It includes the table:  `Information`. 
 
-```sql
--- bd.sql
 
--- 1. Users table
-CREATE TABLE IF NOT EXISTS Users (
-  id           SERIAL PRIMARY KEY,
-  address      TEXT UNIQUE NOT NULL,       -- Aleo wallet address (aleo1...)
-  company_id   INT REFERENCES Company(id),
-  created_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
 
--- 2. Company table
-CREATE TABLE IF NOT EXISTS Company (
-  id         SERIAL PRIMARY KEY,
-  name       TEXT NOT NULL,
-  owner_id   INT REFERENCES Users(id),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 3. Information table
-CREATE TABLE IF NOT EXISTS Information (
-  id            BIGINT PRIMARY KEY,        -- matches pureDocId (numeric)
-  name          TEXT NOT NULL,             -- JSON filename
-  cle_crypte    TEXT NOT NULL,             -- AES key (Base64)
-  fichier_crypt TEXT NOT NULL,             -- encrypted JSON (Base64: IV ∥ ciphertext)
-  company_id    INT REFERENCES Company(id),
-  valide        BOOLEAN DEFAULT FALSE,
-  created_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
-
-> **Note**: Make sure the table names are lowercase if Supabase is case-sensitive. Adjust `BIGINT` for `Information.id` if needed.
+> **Note**: Make sure the table names are lowercase if Supabase is case-sensitive. Adjust `BIGINT` for `Information.id` with autoincrement fonction if needed.
 
 ---
 
